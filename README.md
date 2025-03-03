@@ -9,3 +9,6 @@ Data were refined: only research-grade data and Phoenicopterus roseus observatio
 # Mapping
 Both a static map and an interactive map were rendered.
 Suspicious/vagrant observations (outside of the accepted range) were singled out.
+
+# Reproducility
+[![Binder](https:/mybinder.org/badge_org.svg)](https://hub.2i2c.mybinder.org/user/francesca17s-gis-vlj1bqcp/lab)
