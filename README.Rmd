@@ -1,0 +1,133 @@
+---
+title: "README"
+author: "Francesca Strydom"
+date: "2025-02-28"
+output: rmarkdown::github_document
+---
+
+# Libraries
+
+```{r}
+library(sf)
+library(rinat)
+library(dplyr)
+library(tidyverse)
+library(rosm)
+library(ggspatial)
+library(leaflet)
+library(htmltools)
+library(mapview)
+library(leafpop)
+library(webshot)
+```
+
+# Retrieving data
+filtering for only research-grade data and Greater Flamingo observations
+
+```{r}
+Fdat <- get_inat_obs(query = "Greater Flamingo", geo = TRUE, maxresults = 10000)
+
+Fdat <- Fdat[Fdat$quality_grade == "research", ]
+
+Fdat <- Fdat %>%
+  filter(scientific_name == "Phoenicopterus roseus")
+```
+
+# Refining data
+
+```{r}
+head(Fdat[, c("latitude", "longitude")])
+
+Fdat <- Fdat[!is.na(Fdat$longitude) & !is.na(Fdat$latitude), ]
+```
+
+# Converting to a shape file
+Defining the CRS as Trans Mercator
+
+```{r}
+Fdat.shp <- st_as_sf(Fdat, coords = c("longitude", "latitude"), crs = 4326)
+
+st_write(Fdat.shp, "flamingo_occurrences.shp")
+
+st_write(Fdat, "flamingo_occurrences.shp", append = FALSE)
+file.exists("flamingo_occurrences.shp")
+
+Fdat <- st_transform(Fdat.shp, crs = tm_crs)
+
+
+class(Fdat.shp)
+
+head(Fdat.shp)
+```
+
+# Plotting I - normal map
+
+```{r}
+ggplot() + 
+  annotation_map_tile(type = "hotstyle", progress = "none") + 
+  geom_sf(data = Fdat.shp,
+          colour = "pink",
+          size = 0.8)
+
+```
+
+
+# Plotting II - interactive map
+adding metadata to points
+adding a likely range
+
+```{r}
+lf <- Fdat.shp %>%
+  mutate(click_url = paste("<b><a href='", url, "'>Link to iNat observation</a></b>"))
+
+lon_min <- -17.5333
+lon_max <- 122.8333
+lat_min <- -34.8333
+lat_max <- 54.0000
+
+Fdat.shp <- Fdat.shp %>%
+  mutate(longitude = st_coordinates(.)[,1], 
+         latitude = st_coordinates(.)[,2])
+
+outside_points <- Fdat.shp %>%
+  filter(longitude < lon_min | longitude > lon_max | latitude < lat_min | latitude > lat_max)
+
+outside_points$label <- "Outside Range"
+
+mapview(Fdat.shp, 
+        popup = 
+          popupTable(lf, 
+                     zcol = c("user_login", "captive_cultivated", "click_url")),
+        col.regions = "pink",
+        map.types = "CartoDB.Positron",
+        layer.name = "Greater Flamingo Observations",
+        alpha = 1) +
+  mapview(outside_points,
+          popup = 
+            popupTable(lf,
+                       zcol = c("user_login", "captive_cultivated", "click_url")),
+          col.regions = "forestgreen", label = outside_points$label,
+          layer.name = "Out of Range",
+          alpha = 1)
+```
+
+# Saving the map
+
+```{r}
+Fmap <- mapview(Fdat.shp, 
+        popup = 
+          popupTable(lf, 
+                     zcol = c("user_login", "captive_cultivated", "click_url")),
+        col.regions = "pink",
+        map.types = "CartoDB.Positron",
+        layer.name = "Greater Flamingo Observations",
+        alpha = 1) +
+  mapview(outside_points,
+          popup = 
+            popupTable(lf,
+                       zcol = c("user_login", "captive_cultivated", "click_url")),
+          col.regions = "forestgreen", label = outside_points$label,
+          layer.name = "Out of Range",
+          alpha = 1)
+mapshot(Fmap, "flamingo_map.html")
+```
