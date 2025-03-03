@@ -11,4 +11,4 @@ Both a static map and an interactive map were rendered.
 Suspicious/vagrant observations (outside of the accepted range) were singled out.
 
 # Reproducility
-[![Binder](https:/mybinder.org/badge_org.svg)](https://hub.2i2c.mybinder.org/user/francesca17s-gis-vlj1bqcp/lab)
+[![Binder](https:/mybinder.org/badge_org.svg)](https://mybinder.org/v2/gh/Francesca17S/GIS/HEAD)
